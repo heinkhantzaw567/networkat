@@ -5,3 +5,112 @@
 {
     margin-bottom: 5px;
 }
+.post {
+    position: relative;
+    width: 100%;
+    
+    margin: 20px auto;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .post img {
+    width: 100%;
+    display: block;
+  }
+  .post .like-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 5rem;
+    color: #ff4757;
+    pointer-events: none;
+  }
+  .post .animate {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 5rem;
+    color: #ff4757;
+    pointer-events: none;
+    animation: pop 0.5s ease;
+  }
+  .post .actions {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+  }
+  .post .actions i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .post .actions i:hover {
+    transform: scale(1.2);
+  }
+  .post .actions .liked {
+    color: #ff4757;
+}
+
+@keyframes pop {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+    }
+}
+
+.content {
+    padding: 10px;
+}
+
+.edit-button {
+    background-color: transparent;
+    color: #007bff;
+    border: none;
+    padding: 0;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.edit-button:hover {
+    text-decoration: underline;
+}
+
+.post .count
+{
+    margin-right: 5px;
+}
+
+.comment-box {
+  background-color: #f9f9f9;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.comment-input {
+  width: 80%;
+  padding: 5px;
+  margin-right: 5px;
+}
+
+.comment-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.comment-button:hover {
+  background-color: #0056b3;
+}
