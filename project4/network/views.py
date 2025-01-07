@@ -5,11 +5,11 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.http import JsonResponse
-from .models import User,Post,Comment
+from .models import User,Post,Comment,Follow
 import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
-
+from django.db.models import Prefetch
 
 
 
@@ -78,7 +78,9 @@ def index(request):
         if request.user.is_anonymous:
             user = None
         
-        posts = Post.objects.all().order_by("-created_at")
+        posts = Post.objects.prefetch_related(
+            Prefetch('comments', queryset=Comment.objects.order_by('-created_at'))
+        ).order_by('-created_at')
         
         
         return render(request, "network/index.html",{
@@ -95,14 +97,69 @@ def posts(request):
 @login_required
 def post (request,post_id):
     if request.method == "PUT":
+        if request.user.is_anonymous:
+            return JsonResponse({"error": "User must login in to like post."}, status=400)
+        
         user = request.user
         data = json.loads(request.body)
-        post = Post.objects.get(id=post_id)
-        post.like_count = data["like_count"]
-        post.like.add(user)
-        post.save()
-        return HttpResponse(status=204)
-        
+        if data.get("like_count") is  not None:
+            post = Post.objects.get(id=post_id)
+            post.like_count = data["like_count"]
+            post.like.add(user)
+            post.save()
+            return HttpResponse(status=204)
+        elif data.get("comment") is not None:
+            comment = Comment(userid=user,comment=data["comment"])
+            comment.save()
+            post = Post.objects.get(id=post_id)
+            post.comment_count += 1
+            post.comments.add(comment)
+            post.save()
+            return HttpResponse(status=204)
+
     post = Post.objects.get(id=post_id)
     data = serialize('json', [post])
     return JsonResponse(data, safe=False)
+
+def profile(request,username):
+        if request.method == "GET":
+            user = request.user
+            searchuser = User.objects.get(username=username)
+            if request.user.is_anonymous:
+                currentuser = None
+            following = Follow.objects.filter(follower=user)
+            following_count = Follow.objects.filter(follower=user).count()
+            followers = Follow.objects.filter(following=user).count()
+            follwers_count = Follow.objects.filter(following=user).count()
+            posts = Post.objects.filter(userid=searchuser).prefetch_related(
+        Prefetch('comments', queryset=Comment.objects.order_by('-created_at'))
+    ).order_by('-created_at')
+            posts_count = posts.count()
+            return render(request, "network/profile.html", {
+                "user": user,
+                "following": following,
+                "followers": followers,
+                "following_count": following_count,
+                "followers_count": follwers_count,
+                "posts": posts,
+                "posts_count": posts_count,
+                "searchuser": searchuser
+                
+            })
+def follow(request):
+    if request.method == "PUT":
+        user = request.user
+        data = json.loads(request.body)
+        following = User.objects.get(username=data["following"])
+        follow = Follow(follower=user,following=following)
+        follow.save()
+        return HttpResponse(status=204)
+    elif request.method == "DELETE":
+        user = request.user
+        data = json.loads(request.body)
+        following = User.objects.get(username=data["following"])
+        follow = Follow.objects.get(follower=user,following=following)
+        follow.delete()
+        return HttpResponse(status=204)
+    else:
+        return JsonResponse({"error": "PUT or DELETE request required."}, status=400)
