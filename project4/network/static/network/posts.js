@@ -3,15 +3,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let likeCountElement = document.querySelector('.like-count');
     const user = document.getElementById('username').innerHTML;
     const followButton = document.getElementById('follow-button');
-
+    console.log(followButton.innerHTML.trim())
     if (followButton) {
       followButton.addEventListener('click', () => {
+        
         if (followButton.innerHTML === 'Follow') {
+          console.log(1)
           followButton.innerHTML = 'Unfollow';
-          followUser(user,1);
-        } else {
+          followuser = document.getElementById('searchusername').innerHTML;
+          followUser(followuser,true);
+        } 
+        if (followButton.innerHTML === 'Unfollow') {
           followButton.innerHTML = 'Follow';
-          followUser(user,-1);
+          followuser = document.getElementById('searchusername').innerHTML;
+          followUser(followuser,false);
         }
       });
     }
@@ -119,3 +124,26 @@ function commentPost(postId,comment,comment_section,user) {
     })
     });
   }
+
+ function followUser(following,bool)
+ {
+  if (bool) {
+    console.log(1)
+    fetch('/follow',{
+      method: 'PUT',
+      body: JSON.stringify({
+        following: following
+      })
+    }) ;
+  }
+  else{
+    fetch('/follow',{
+      method: 'DELETE',
+      body: JSON.stringify({
+        following: following
+      })
+    }) ;
+  }
+  
+
+ }

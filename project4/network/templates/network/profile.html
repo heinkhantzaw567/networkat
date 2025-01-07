@@ -12,10 +12,15 @@
         <img src="../../static/network/profile.jpg" alt="Profile Picture">
       </div>
       <div class="profile-info">
-        <h1 class="username">{{ searchuser.username }}</h1>
+        <h1 class="username" id ="searchusername">{{ searchuser.username }}</h1>
         <p class="bio">Web Developer | Coffee Lover | Dream Chaser 🌟</p>
-        {% if user != currentuser %}
-        <button class="follow-btn" id ="follow-button">Follow</button>
+        {% if user != searchuser %}
+        {% if bool %}
+        <button class="follow-btn" id ="follow-button">Unfollow</button>
+          {% else %}
+          <button class="follow-btn" id ="follow-button">Unfollow</button>
+          {% endif %}
+        
         {% endif %}
       </div>
     </div>

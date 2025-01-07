@@ -121,31 +121,51 @@ def post (request,post_id):
     data = serialize('json', [post])
     return JsonResponse(data, safe=False)
 
-def profile(request,username):
-        if request.method == "GET":
-            user = request.user
-            searchuser = User.objects.get(username=username)
-            if request.user.is_anonymous:
-                currentuser = None
-            following = Follow.objects.filter(follower=user)
-            following_count = Follow.objects.filter(follower=user).count()
-            followers = Follow.objects.filter(following=user).count()
-            follwers_count = Follow.objects.filter(following=user).count()
-            posts = Post.objects.filter(userid=searchuser).prefetch_related(
-        Prefetch('comments', queryset=Comment.objects.order_by('-created_at'))
-    ).order_by('-created_at')
-            posts_count = posts.count()
-            return render(request, "network/profile.html", {
-                "user": user,
-                "following": following,
-                "followers": followers,
-                "following_count": following_count,
-                "followers_count": follwers_count,
-                "posts": posts,
-                "posts_count": posts_count,
-                "searchuser": searchuser
-                
-            })
+from django.shortcuts import render
+from django.db.models import Prefetch
+
+def profile(request, username):
+    if request.method == "GET":
+        # Get the logged-in user and the searched user
+        user = request.user if not request.user.is_anonymous else None
+        searchuser = User.objects.get(username=username)
+
+        # Initialize the `bool` variable
+        bool = False
+
+        # Determine if the logged-in user follows the searched user
+        if user and user != searchuser:
+            if Follow.objects.filter(follower=user, following=searchuser).exists():
+                bool = True
+
+        # Fetch follow information based on whether the profile belongs to the logged-in user or another user
+        profile_user = searchuser if user != searchuser else user
+        following = Follow.objects.filter(follower=profile_user)
+        followers = Follow.objects.filter(following=profile_user)
+        following_count = Follow.objects.filter(follower=profile_user).count()
+        followers_count = Follow.objects.filter(following=profile_user).count()
+
+        # Get all posts of the searched user, with comments prefetched
+        posts = Post.objects.filter(userid=searchuser).prefetch_related(
+            Prefetch('comments', queryset=Comment.objects.order_by('-created_at'))
+        ).order_by('-created_at')
+        posts_count = posts.count()
+
+        # Render the profile page
+        return render(request, "network/profile.html", {
+            "user": user,  # Logged-in user (can be None if anonymous)
+            "searchuser": searchuser,  # Profile owner
+            "following_count": following_count,
+            "followers_count": followers_count,
+            "followers":followers,
+            "following":following,
+            "posts": posts,
+            "posts_count": posts_count,
+            "bool": bool,  # Whether the logged-in user follows the searched user
+        })
+
+@csrf_exempt
+@login_required
 def follow(request):
     if request.method == "PUT":
         user = request.user
