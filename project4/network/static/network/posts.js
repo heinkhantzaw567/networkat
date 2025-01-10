@@ -3,23 +3,49 @@ document.addEventListener('DOMContentLoaded', () => {
     let likeCountElement = document.querySelector('.like-count');
     const user = document.getElementById('username').innerHTML;
     const followButton = document.getElementById('follow-button');
-    console.log(followButton.innerHTML.trim())
+    const buttons = document.querySelectorAll('.tab');
+    const sections = document.querySelectorAll('.tab-content');
+    console.log(buttons);
+    console.log(sections);
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        // Remove 'active' class from all buttons and sections
+        buttons.forEach((btn) => btn.classList.remove('active'));
+        sections.forEach((section) => section.classList.remove('active'));
+
+        // Add 'active' class to the clicked button and its associated section
+        button.classList.add('active');
+        const targetSection = document.getElementById(button.dataset.tab);
+        if (targetSection) {
+          targetSection.classList.add('active');
+        }
+      });
+    });
     if (followButton) {
+      // Add click event listener to the follow button
       followButton.addEventListener('click', () => {
+        // Get the username from the element with id 'searchusername'
+        const usernameElement = document.getElementById('searchusername');
+        if (!usernameElement) {
+          console.error('Username element not found!');
+          return;
+        }
         
-        if (followButton.innerHTML === 'Follow') {
-          console.log(1)
-          followButton.innerHTML = 'Unfollow';
-          followuser = document.getElementById('searchusername').innerHTML;
-          followUser(followuser,true);
-        } 
-        if (followButton.innerHTML === 'Unfollow') {
+        const followuser = usernameElement.innerHTML.trim();
+
+        // Toggle follow/unfollow behavior
+        if (followButton.innerHTML.trim() === 'Follow') {
+          console.log('Following user:', followuser);
+          followButton.innerHTML = 'Following';
+          followUser(followuser, true); // Assuming followUser function is defined elsewhere
+        } else if (followButton.innerHTML.trim() === 'Following') {
+          console.log('Unfollowing user:', followuser);
           followButton.innerHTML = 'Follow';
-          followuser = document.getElementById('searchusername').innerHTML;
-          followUser(followuser,false);
+          followUser(followuser, false); // Assuming followUser function is defined elsewhere
         }
       });
     }
+
     posts.forEach(post => {
       const likeOverlay = post.querySelector('.like-overlay');
       const likeButton = post.querySelector('.like-button');
@@ -67,12 +93,14 @@ document.addEventListener('DOMContentLoaded', () => {
           likeButton.classList.remove('liked');
           currentCount = parseInt(likeCountElement.innerHTML, 10)
           likeCountElement.innerHTML = currentCount - 1;
+          console.log(currentCount);
           likePost(post.dataset.id,currentCount,-1)
         } else {
           likeButton.classList.add('liked');
           likeOverlay.classList.add('animate');
           currentCount = parseInt(likeCountElement.innerHTML, 10)
           likeCountElement.innerHTML = currentCount + 1;
+          
           likePost(post.dataset.id,currentCount,1)
         }
   
@@ -97,10 +125,40 @@ document.addEventListener('DOMContentLoaded', () => {
             likeOverlay.classList.remove('animate');
           }, 500);
       });
+    
+      const editButton = post.querySelector('.edit-button');
+      if (editButton) {
+        editButton.addEventListener('click', () => {
+          const content = post.querySelector('.post-content');
+          const edit = document.createElement('input');
+          edit.classList.add('edit-input');
+          edit.value = content.innerHTML;
+          content.replaceWith(edit);
+          edit.focus();
+          edit.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+              const newContent = edit.value;
+              edit.replaceWith(content);
+              content.innerHTML = newContent;
+              console.log(newContent);
+              fetch(`/posts/${post.dataset.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                  post: newContent
+                })
+              });
+            }
+  
+          });
+        });
+      }
+      
     });
+    
   });
 
 function likePost(postId,currentCount,add) {
+  
     fetch(`/posts/${postId}`, {
     method: 'PUT',
     body: JSON.stringify({
@@ -128,7 +186,9 @@ function commentPost(postId,comment,comment_section,user) {
  function followUser(following,bool)
  {
   if (bool) {
-    console.log(1)
+    const followercount = document.getElementById('follower_count');
+    followercount.innerHTML = parseInt(followercount.innerHTML, 10) + 1;
+  
     fetch('/follow',{
       method: 'PUT',
       body: JSON.stringify({
@@ -137,6 +197,8 @@ function commentPost(postId,comment,comment_section,user) {
     }) ;
   }
   else{
+    const followercount = document.getElementById('follower_count');
+    followercount.innerHTML = parseInt(followercount.innerHTML, 10) - 1;
     fetch('/follow',{
       method: 'DELETE',
       body: JSON.stringify({

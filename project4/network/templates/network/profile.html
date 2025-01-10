@@ -16,9 +16,9 @@
         <p class="bio">Web Developer | Coffee Lover | Dream Chaser 🌟</p>
         {% if user != searchuser %}
         {% if bool %}
-        <button class="follow-btn" id ="follow-button">Unfollow</button>
+        <button class="follow-btn" id ="follow-button">Following</button>
           {% else %}
-          <button class="follow-btn" id ="follow-button">Unfollow</button>
+          <button class="follow-btn" id ="follow-button">Follow</button>
           {% endif %}
         
         {% endif %}
@@ -32,20 +32,20 @@
         <span class="label">Posts</span>
       </div>
       <div class="stat">
-        <span class="number">{{ followers_count }}</span>
+        <span class="number" id="follower_count">{{ followers_count }}</span>
         <span class="label">Followers</span>
       </div>
       <div class="stat">
-        <span class="number">{{ following_count }}</span>
+        <span class="number" id ="following_count">{{ following_count }}</span>
         <span class="label">Following</span>
       </div>
     </div>
 
     <!-- Tabs Section -->
     <div class="profile-tabs">
-      <button class="tab active" data-tab="posts">Posts</button>
-      <button class="tab" data-tab="followers">Followers</button>
-      <button class="tab" data-tab="following">Following</button>
+      <button class="tab active" id ="post-button"data-tab="posts">Posts</button>
+      <button class="tab" id ="followers-button" data-tab="followers">Followers</button>
+      <button class="tab" id ="following-button" data-tab="following">Following</button>
     </div>
 
     <!-- Content Section -->
@@ -62,12 +62,13 @@
     <!-- Post Content -->
     <div class="content">
       <h4>{{ post.userid }}</h4>
-      <p>{{ post.post }}</p>
+      {% if user == post.userid %}
+        <button class="edit-button">Edit</button>
+        {% endif %}
+      <p class="post-content">{{ post.post }}</p>
       <small>Posted on {{ post.created_at }}</small>
       
-      {% if user == post.userid %}
-      <button class="edit-button">Edit</button>
-      {% endif %}
+      
     </div>
     
     <!-- Actions Section -->
@@ -98,10 +99,34 @@
 
       </div>
       <div class="tab-content" id="followers">
+        {% if followers %}
+        {% for follower in followers %}
+        <div class="follower-card">
+          <img src="../../static/network/profile.jpg" alt="Profile Picture" class="profile-pic">
+          <div class="follower-info">
+            <span class="username">{{ follower.follower }}</span>
+          </div>
+          <!-- <button class="follow-btn">Follow</button> -->
+        </div>
+        {% endfor %}
+        {% else %}
         <p>No followers to display.</p>
+        {% endif %}
       </div>
       <div class="tab-content" id="following">
-        <p>No following to display.</p>
+        {% if following %}
+        {% for follower in following %}
+        <div class="follower-card">
+          <img src="../../static/network/profile.jpg" alt="Profile Picture" class="profile-pic">
+          <div class="follower-info">
+            <span class="username">{{ follower.following }}</span>
+          </div>
+          <!-- <button class="follow-btn">Follow</button> -->
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>No followering to display.</p>
+        {% endif %}
       </div>
     </div>
   </div>

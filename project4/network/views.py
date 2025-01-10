@@ -10,7 +10,8 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
-
+from django.core.paginator import Paginator
+from django.shortcuts import render
 
 
 
@@ -70,7 +71,6 @@ def index(request):
         post = request.POST["post"]
         user = request.user
         post = Post(userid=user,post=post)
-        
         post.save()
         return HttpResponseRedirect(reverse("index"))
     else:
@@ -82,16 +82,24 @@ def index(request):
             Prefetch('comments', queryset=Comment.objects.order_by('-created_at'))
         ).order_by('-created_at')
         
-        
+        paginator  = Paginator(posts,10)
+
+        page_number = request.GET.get('page',1)
+        print(page_number,1)
+        page_obj = paginator.get_page(page_number)
+        print(page_obj)
+        for i in page_obj:
+            print(i.like.all())
         return render(request, "network/index.html",{
-            "posts":posts,
+            "posts":page_obj,
             "user":user
         })
 
 def posts(request):
-    posts = Post.objects.all().order_by("-created_at")
-    data = serialize('json', posts)
-    return JsonResponse(data, safe=False)
+    if request.method == "GET":
+        posts = Post.objects.all().order_by("-created_at")
+        data = serialize('json', posts)
+        return JsonResponse(data, safe=False)
 
 @csrf_exempt
 @login_required
@@ -102,10 +110,14 @@ def post (request,post_id):
         
         user = request.user
         data = json.loads(request.body)
-        if data.get("like_count") is  not None:
+        if data.get("like_count") is not None:
             post = Post.objects.get(id=post_id)
-            post.like_count = data["like_count"]
-            post.like.add(user)
+            if post.like_count < data["like_count"]:
+                post.like_count = data["like_count"]
+                post.like.add(user)
+            if post.like_count > data["like_count"]:
+                post.like_count = data["like_count"]
+                post.like.remove(user)
             post.save()
             return HttpResponse(status=204)
         elif data.get("comment") is not None:
@@ -116,7 +128,11 @@ def post (request,post_id):
             post.comments.add(comment)
             post.save()
             return HttpResponse(status=204)
-
+        elif data.get("post") is not None:
+            post = Post.objects.get(id=post_id)
+            post.post = data["post"]
+            post.save()
+            return HttpResponse(status=204)
     post = Post.objects.get(id=post_id)
     data = serialize('json', [post])
     return JsonResponse(data, safe=False)
@@ -150,10 +166,11 @@ def profile(request, username):
             Prefetch('comments', queryset=Comment.objects.order_by('-created_at'))
         ).order_by('-created_at')
         posts_count = posts.count()
-
-        # Render the profile page
+        for i in followers:
+            print(i.follower)
+        
         return render(request, "network/profile.html", {
-            "user": user,  # Logged-in user (can be None if anonymous)
+            "user": user, 
             "searchuser": searchuser,  # Profile owner
             "following_count": following_count,
             "followers_count": followers_count,
@@ -183,3 +200,20 @@ def follow(request):
         return HttpResponse(status=204)
     else:
         return JsonResponse({"error": "PUT or DELETE request required."}, status=400)
+    
+def following(request):
+    if request.method == "GET":
+        user = request.user
+        following = Follow.objects.filter(follower=user)
+        posts = Post.objects.filter(userid__in=following.values('following')).prefetch_related(
+            Prefetch('comments', queryset=Comment.objects.order_by('-created_at'))
+        ).order_by('-created_at')
+        
+        paginator  = Paginator(posts,10)
+        page_number = request.GET.get('page',1)
+        page_obj = paginator.get_page(page_number)
+        return render(request, "network/following.html", {
+            "posts": page_obj,
+        })
+
+        
